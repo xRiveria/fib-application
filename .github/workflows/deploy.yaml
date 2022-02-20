@@ -1,0 +1,26 @@
+name: Fibonacci Application Deployment
+on:
+  push:
+    branches:
+      - "master"
+ 
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - run: docker login -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }}
+      - run: docker build -t riveria/complex-app -f ./client/Dockerfile.dev ./client
+      - run: docker run -e CI=true riveria/complex-app npm test
+      - run: docker build -t riveria/complex-app-client ./client
+      - run: docker build -t riveria/complex-app-nginx ./nginx
+      - run: docker build -t riveria/complex-app-server ./server
+      - run: docker build -t riveria/complex-app-worker ./worker
+      - run: docker push riveria/complex-app-client
+      - run: docker push riveria/complex-app-nginx
+      - run: docker push riveria/complex-app-server
+      - run: docker push riveria/complex-app-worker
+    
+      - name: Generate Deployment Package
+        run: zip -r deploy.zip . -x '*.git*'
+ 
